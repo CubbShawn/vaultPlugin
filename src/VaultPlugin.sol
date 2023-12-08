@@ -2,28 +2,31 @@
 pragma solidity 0.8.17;
 
 import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
-import {ERC4626Upgradeable, IERC20MetadataUpgradeable, IERC20Upgradeable, SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
+import {ERC4626Upgradeable, IERC20MetadataUpgradeable, IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 
 contract VaultPlugin is PluginUUPSUpgradeable, ERC4626Upgradeable {
-    bytes32 public constant PAUSE_PERMISSION_ID = keccak256("PAUSE_PERMISSION");
-    uint256 private nonce = 0;
+
+        bytes32 public constant PAUSE_PERMISSION_ID = keccak256("PAUSE_PERMISSION");
+
     bool public isPaused;
+    uint256 private nonce = 0;
+
 
     event VaultPaused(bool);
     error ContractPaused();
-
-    function togglePause() external auth(PAUSE_PERMISSION_ID) {
-        isPaused = !isPaused;
-        emit VaultPaused(isPaused);
     }
-
     function initialize(IDAO _dao, IERC20MetadataUpgradeable _asset) external initializer {
         __PluginUUPSUpgradeable_init(_dao);
         __ERC4626_init(_asset);
         isPaused = false;
     }
 
-    function totalAssets() public view virtual override returns (uint256) {
+    function togglePause() external auth(PAUSE_PERMISSION_ID) {
+        isPaused = !isPaused;
+        emit VaultPaused(isPaused);
+
+
+       function totalAssets() public view virtual override returns (uint256) {
         return IERC20Upgradeable(asset()).balanceOf(address(dao()));
     }
 
@@ -64,7 +67,7 @@ contract VaultPlugin is PluginUUPSUpgradeable, ERC4626Upgradeable {
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 
-    function _withdrawFromDao(address to, uint256 assets) internal {
+function _withdrawFromDao(address to, uint256 assets) internal {
         IDAO.Action[] memory action = new IDAO.Action[](1);
         action[0] = IDAO.Action({
             to: asset(),
@@ -81,5 +84,6 @@ contract VaultPlugin is PluginUUPSUpgradeable, ERC4626Upgradeable {
             // are any of the transactions allowed to fail? 0 === none
             _allowFailureMap: 0
         });
-    }
+    
 }
+
